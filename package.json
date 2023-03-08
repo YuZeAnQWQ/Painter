@@ -1,0 +1,17 @@
+{
+  "name": "ls-paintboard-painter",
+  "version": "1.0.3",
+  "description": "The Painter of Luogu Style PaintBoard (Hex color version)",
+  "author": "hjl2011 <hjl2011@yeah.net>",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hjl2011/LS-Paintboard-AutoPaint.git"
+  }
+}
