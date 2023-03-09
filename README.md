@@ -1,4 +1,4 @@
-## 介绍
+## 简介
 
 冬日绘板自动绘画脚本，在 [IceCang/SegonPaintboard-AutoPaint](https://github.com/IceCang/SegonPaintboard-AutoPaint) 的基础上做了一些更改。
 
@@ -29,8 +29,10 @@
 
 ## 使用
 
-1. 在 `pic` 文件夹中放入待转换的图片。
-2. 在脚本根目录运行 `init.ps1`。
+1. 下载 Node.js 和 Python。
+2. 在 `pic` 文件夹中放入待转换的图片。
 3. 将 `config-example.json` 重命名为 `config.json` 并进行相关配置。
-4. 下载 NodeJS。
-5. `npm install`，`npm start`。
+4. 在脚本根目录运行 `init.ps1`。
+5. 在脚本根目录下执行 `npm start`。
+
+推荐用 Windows Terminal 运行。

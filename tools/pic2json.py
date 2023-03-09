@@ -1,5 +1,3 @@
-# Run: py tools/pic2json.py
-
 from PIL import Image
 import sys
 import os
@@ -14,14 +12,13 @@ output_file = open(os.getcwd() + '/pic-json/' + json_name + '.json',"w")
 img = Image.open(img_path)
 img_rgb = img.convert('RGB')
 
-output_file.write("{")
-
 tuple_value = (0,0,0)
 hex_color = ""
 r_hex = ""
 g_hex = ""
 b_hex = ""
 
+output_file.write("[")
 for i in range(img_rgb.size[0]):
     for j in range(img_rgb.size[1]):
         tuple_value = img_rgb.getpixel((i,j))
@@ -39,5 +36,6 @@ for i in range(img_rgb.size[0]):
             output_file.write('{"x":' + str(i) + ',"y":' + str(j) + ',"hex":"' + hex_color + '"}')
         else:
             output_file.write('{"x":' + str(i) + ',"y":' + str(j) + ',"hex":"' + hex_color + '"},')
+output_file.write("]")
 
 output_file.close()

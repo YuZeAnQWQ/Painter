@@ -21,7 +21,6 @@ let brk_flg = false;
 main();
 
 async function main() {
-    console.log('PaintTool Being loaded...');
     getConfig();
     getPic();
     var tmp;
@@ -122,7 +121,6 @@ function getPic() {
             });
         }
     } catch (err) {
-        throw err;
         console.log('Get Pictures Failed.');
         process.exit(1);
     }
