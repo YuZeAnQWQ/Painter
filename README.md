@@ -1,3 +1,5 @@
+# LS-Paintboard-AutoPaint
+
 ## 简介
 
 冬日绘板自动绘画脚本，在 [IceCang/SegonPaintboard-AutoPaint](https://github.com/IceCang/SegonPaintboard-AutoPaint) 的基础上做了一些更改。
