@@ -51,6 +51,8 @@ function getConfig() {
             user.lastPaintTime = Date.now() - config.lastPaintTime;
         }
         console.log(`Token: ${config.tokens.length}`);
+        if(config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
+        if(config.paintTime < 30000) console.log("Warning: paintTime < 30s");
     } catch (err) {
         console.log('Get Config Failed.');
         process.exit(1);
