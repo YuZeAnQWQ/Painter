@@ -4,16 +4,16 @@ const fs = require('fs');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
 const process = require('process');
-const { exit } = require('process');
 
 const PaintBoardUrl = 'https://segonoj.site/paintboard';
 
 let config;
 let pic = [];
-let board = [], last_board = [], waitpos = [];
+let board = [], last_board = [], waitpos = [], priority = [];
 let lastGetBoardTime = 0, reqPaintPos = [];
 let paints = 0;
-let delta, wrongtoken = 0, lcorrect, speed, eTime;
+let delta, lcorrect, speed, eTime;
+let last_oktoken = 0, wrongtoken = 0
 let usetoken = [];
 let fail_tokens_flg = [];
 let brk_flg = false;
@@ -31,7 +31,7 @@ async function main() {
         if (tmp - lastGetBoardTime > config.fetchTime) await countDelta();
         for (let user of config.tokens) {
             if (Date.now() - user.lastPaintTime < config.paintTime) continue;
-            if(fail_tokens_flg[user.token]) continue;
+            if (fail_tokens_flg[user.token]) continue;
             if (reqPaintPos.length) {
                 user.lastPaintTime = Date.now();
                 let data = reqPaintPos.shift();
@@ -51,8 +51,9 @@ function getConfig() {
             user.lastPaintTime = Date.now() - config.lastPaintTime;
         }
         console.log(`Token: ${config.tokens.length}`);
-        if(config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
-        if(config.paintTime < 30000) console.log("Warning: paintTime < 30s");
+        last_oktoken = config.tokens.length;
+        if (config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
+        if (config.paintTime < 30000) console.log("Warning: paintTime < 30s");
     } catch (err) {
         console.log('Get Config Failed.');
         process.exit(1);
@@ -65,14 +66,14 @@ function getReqPaintPos() {
         for (let p of pic) {
             for (let pix of p.map) {
                 if (board[pix.x + p.x][pix.y + p.y] != pix.hex) {
-                    if(config.random) {
+                    if (config.random) {
                         reqPaintPos.push({
                             x: pix.x + p.x,
                             y: pix.y + p.y,
                             hex: pix.hex
                         });
                     } else {
-                        if(waitpos[pix.x + p.x][pix.y + p.y] > 0) waitpos[pix.x + p.x][pix.y + p.y]--;
+                        if (waitpos[pix.x + p.x][pix.y + p.y] > 0) waitpos[pix.x + p.x][pix.y + p.y]--;
                         else {
                             reqPaintPos.push({
                                 x: pix.x + p.x,
@@ -84,28 +85,30 @@ function getReqPaintPos() {
                 }
             }
         }
-        while(reqPaintPos.length < config.tokens.length) {
-            for(let p of pic) {
+        while (reqPaintPos.length < last_oktoken) {
+            for (let p of pic) {
                 for (let pix of p.map) {
                     reqPaintPos.push({
                         x: pix.x + p.x,
                         y: pix.y + p.y,
                         hex: pix.hex
                     });
-                    if(reqPaintPos.length >= config.tokens.length) {
+                    if (reqPaintPos.length >= last_oktoken) {
                         brk_flg = true;
                         break;
                     }
                 }
-                if(brk_flg) break;
+                if (brk_flg) break;
             }
-            if(brk_flg) {
+            if (brk_flg) {
                 brk_flg = false;
                 break;
             }
         }
-        if (config.random) {
-            reqPaintPos.sort(() => { return Math.random() - 0.5; });
+        if (config.priority_mode) {
+            reqPaintPos.sort((a, b) => {
+                return priority[b.x][b.y] - priority[a.x][a.y];
+            });
         }
     } catch (err) {
         var tmp = Date().toLocaleString();
@@ -185,10 +188,12 @@ async function countDelta() {
     }
     for (let p of pic) {
         for (let pix of p.map) {
-            if(board[pix.x + p.x][pix.y + p.y] == pix.hex) correct++;
+            if (board[pix.x + p.x][pix.y + p.y] == pix.hex) correct++;
             else wrong++;
-            if(!config.random) {
-                if(last_board[pix.x + p.x][pix.y + p.y] != board[pix.x + p.x][pix.y + p.y]) {
+            if (last_board[pix.x + p.x][pix.y + p.y] != board[pix.x + p.x][pix.y + p.y]) {
+                if (config.random) {
+                    priority[pix.x + p.x][pix.y + p.y] += 1;
+                } else {
                     waitpos[pix.x + p.x][pix.y + p.y] = 5;
                 }
             }
@@ -196,6 +201,7 @@ async function countDelta() {
     }
     var tmp = Date().toLocaleString();
     console.log(`${tmp} Paint: \x1B[34m${isNaN(correct - lcorrect) ? 0 : correct - lcorrect}\x1B[0m, Remaining: \x1B[34m${wrong}\x1B[0m, WrongToken: \x1B[34m${wrongtoken}\x1B[0m.`);
+    last_oktoken = config.tokens.length - wrongtoken;
     wrongtoken = 0;
     usetoken = []
     delta = paints - (correct - lcorrect);

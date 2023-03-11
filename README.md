@@ -12,6 +12,7 @@
 4. 锁定 token
 5. 多线程维护
 6. 打架模式
+7. 优先级模式（建议用来辅助打架模式）
 
 ## 设置
 
@@ -20,12 +21,13 @@
 3. `startTimestamp`：活动开始时间（UNIX 时间戳），默认为 `2023-04-01 00:00:00`
 4. `endTimestamp`：活动结束时间（UNIX 时间戳），默认为 `2023-04-01 23:59:59`
 5. `random`：打架模式，默认为 `false`
-6. `images`：存储图片（`json` 文件）路径
+6. `priority_mode`：优先级模式，默认为 `true`
+7. `images`：存储图片（`json` 文件）路径
     - 建议路径为 `pic-json/pic<x>.json`，x 为图片编号
     - `id`：Json 文件名（不带后缀）
     - `x`：图片的 x 坐标
     - `y`：图片的 y 坐标
-7. `tokens`：存储 token
+8. `tokens`：存储 token
 
 ## 使用
 

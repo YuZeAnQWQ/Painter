@@ -4,6 +4,7 @@
   "startTimestamp": 1680278400,
   "endTimestamp": 1680364799,
   "random": false,
+  "priority_mode": true,
   "pictures": [
     {
       "id": "pic1",
