@@ -54,6 +54,7 @@ function getConfig() {
         last_oktoken = config.tokens.length;
         if (config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
         if (config.paintTime < 30000) console.log("Warning: paintTime < 30s");
+        console.log("");
     } catch (err) {
         console.log('Get Config Failed.');
         process.exit(1);
@@ -66,13 +67,13 @@ function getReqPaintPos() {
         for (let p of pic) {
             for (let pix of p.map) {
                 if (board[pix.x + p.x][pix.y + p.y] != pix.hex) {
-                    if (config.random) {
+                    if (config.mode == "random") {
                         reqPaintPos.push({
                             x: pix.x + p.x,
                             y: pix.y + p.y,
                             hex: pix.hex
                         });
-                    } else {
+                    } else if(config.mode == "auto") {
                         if (waitpos[pix.x + p.x][pix.y + p.y] > 0) waitpos[pix.x + p.x][pix.y + p.y]--;
                         else {
                             reqPaintPos.push({
@@ -105,14 +106,18 @@ function getReqPaintPos() {
                 break;
             }
         }
-        if (config.priority_mode) {
+        if (config.mode == "priority") {
             reqPaintPos.sort((a, b) => {
                 return priority[b.x][b.y] - priority[a.x][a.y];
+            });
+        } else if(config.mode == "random") {
+            reqPaintPos.sort((a, b) => {
+                return Math.random() - 0.5;
             });
         }
     } catch (err) {
         var tmp = Date().toLocaleString();
-        console.log(tmp, 'Load reqPaintPos Failed:', err);
+        console.log(tmp, 'Load reqPaintPos Failed.');
     }
 }
 
@@ -172,28 +177,33 @@ async function paintBoard(user, data) {
 
 async function countDelta() {
     lastGetBoardTime = Date.now();
-    let correct = 0;
-    let wrong = 0;
-    try {
-        let str = await fetch(PaintBoardUrl + '/board');
-        board = (await str.text()).split('\n');
-        if (!board[board.length - 1]) {
-            board.pop();
+    let correct,wrong;
+    while(true) {
+        correct = 0;
+        wrong = 0
+        try {
+            let str = await fetch(PaintBoardUrl + '/board');
+            board = (await str.text()).split('\n');
+            if (!board[board.length - 1]) {
+                board.pop();
+            }
+            var tmp = Date().toLocaleString();
+            getReqPaintPos();
+        } catch (err) {
+            var tmp = Date().toLocaleString();
+            console.log(tmp, 'Get PaintBoard While Counting Delta Failed:', err.code);
+            continue;
         }
-        var tmp = Date().toLocaleString();
-        getReqPaintPos();
-    } catch (err) {
-        var tmp = Date().toLocaleString();
-        console.log(tmp, 'Get PaintBoard While Counting Delta Failed:', err);
+        break;
     }
     for (let p of pic) {
         for (let pix of p.map) {
             if (board[pix.x + p.x][pix.y + p.y] == pix.hex) correct++;
             else wrong++;
             if (last_board[pix.x + p.x][pix.y + p.y] != board[pix.x + p.x][pix.y + p.y]) {
-                if (config.random) {
+                if (config.mode == "priority") {
                     priority[pix.x + p.x][pix.y + p.y] += 1;
-                } else {
+                } else if(config.mode == "auto") {
                     waitpos[pix.x + p.x][pix.y + p.y] = 5;
                 }
             }
