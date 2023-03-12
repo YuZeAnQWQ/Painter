@@ -5,18 +5,17 @@ const fetch = require('node-fetch');
 const querystring = require('querystring');
 const process = require('process');
 
-const PaintBoardUrl = 'https://segonoj.site/paintboard';
-
 let config;
+let PaintBoardUrl = '';
 let pic = [];
-let board = [], last_board = [], waitpos = [], priority = [];
+let board = [], last_board = new Map(), waitpos = new Map(), priority = new Map();
 let lastGetBoardTime = 0, reqPaintPos = [];
 let paints = 0;
 let delta, lcorrect, speed, eTime;
-let last_oktoken = 0, wrongtoken = 0
+let last_oktoken = 0, wrongtoken = 0;
 let usetoken = [];
 let fail_tokens_flg = [];
-let brk_flg = false;
+let brk_flg = false, map_tmpval = 0;
 
 main();
 
@@ -50,6 +49,7 @@ function getConfig() {
         for (let user of config.tokens) {
             user.lastPaintTime = Date.now() - config.lastPaintTime;
         }
+        PaintBoardUrl = config.url;
         console.log(`Token: ${config.tokens.length}`);
         last_oktoken = config.tokens.length;
         if (config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
@@ -62,62 +62,70 @@ function getConfig() {
 }
 
 function getReqPaintPos() {
-    try {
-        reqPaintPos = [];
-        for (let p of pic) {
-            for (let pix of p.map) {
-                if (board[pix.x + p.x][pix.y + p.y] != pix.hex) {
-                    if (config.mode == "random") {
-                        reqPaintPos.push({
-                            x: pix.x + p.x,
-                            y: pix.y + p.y,
-                            hex: pix.hex
-                        });
-                    } else if(config.mode == "auto") {
-                        if (waitpos[pix.x + p.x][pix.y + p.y] > 0) waitpos[pix.x + p.x][pix.y + p.y]--;
-                        else {
+    while (true) {
+        try {
+            reqPaintPos = [];
+            for (let p of pic) {
+                for (let pix of p.map) {
+                    if (board[pix.x + p.x][pix.y + p.y] != pix.hex) {
+                        if (config.mode == "random") {
                             reqPaintPos.push({
                                 x: pix.x + p.x,
                                 y: pix.y + p.y,
                                 hex: pix.hex
                             });
+                        } else if (config.mode == "auto") {
+                            if (!waitpos.has((pix.x + p.x, pix.y + p.y))) waitpos.set((pix.x + p.x, pix.y + p.y), 0);
+                            map_tmpval = waitpos.get((pix.x + p.x, pix.y + p.y));
+                            if (map_tmpval > 0) waitpos.set((pix.x + p.x, pix.y + p.y), map_tmpval - 1);
+                            else {
+                                reqPaintPos.push({
+                                    x: pix.x + p.x,
+                                    y: pix.y + p.y,
+                                    hex: pix.hex
+                                });
+                            }
                         }
                     }
                 }
             }
-        }
-        while (reqPaintPos.length < last_oktoken) {
-            for (let p of pic) {
-                for (let pix of p.map) {
-                    reqPaintPos.push({
-                        x: pix.x + p.x,
-                        y: pix.y + p.y,
-                        hex: pix.hex
-                    });
-                    if (reqPaintPos.length >= last_oktoken) {
-                        brk_flg = true;
-                        break;
+            while (reqPaintPos.length < last_oktoken) {
+                for (let p of pic) {
+                    for (let pix of p.map) {
+                        reqPaintPos.push({
+                            x: pix.x + p.x,
+                            y: pix.y + p.y,
+                            hex: pix.hex
+                        });
+                        if (reqPaintPos.length >= last_oktoken) {
+                            brk_flg = true;
+                            break;
+                        }
                     }
+                    if (brk_flg) break;
                 }
-                if (brk_flg) break;
+                if (brk_flg) {
+                    brk_flg = false;
+                    break;
+                }
             }
-            if (brk_flg) {
-                brk_flg = false;
-                break;
+            if (config.mode == "priority") {
+                reqPaintPos.sort((a, b) => {
+                    if(!priority.has((a.x,a.y))) priority.set((a.x,a.y),0);
+                    if(!priority.has((b.x,b.y))) priority.set((b.x,b.y),0);
+                    return priority.get((b.x,b.y)) - priority.get((a.x,a.y));
+                });
+            } else if (config.mode == "random") {
+                reqPaintPos.sort((a, b) => {
+                    return Math.random() - 0.5;
+                });
             }
+        } catch (err) {
+            var tmp = Date().toLocaleString();
+            console.log(tmp, 'Load reqPaintPos Failed:', err);
+            continue;
         }
-        if (config.mode == "priority") {
-            reqPaintPos.sort((a, b) => {
-                return priority[b.x][b.y] - priority[a.x][a.y];
-            });
-        } else if(config.mode == "random") {
-            reqPaintPos.sort((a, b) => {
-                return Math.random() - 0.5;
-            });
-        }
-    } catch (err) {
-        var tmp = Date().toLocaleString();
-        console.log(tmp, 'Load reqPaintPos Failed.');
+        break;
     }
 }
 
@@ -177,8 +185,8 @@ async function paintBoard(user, data) {
 
 async function countDelta() {
     lastGetBoardTime = Date.now();
-    let correct,wrong;
-    while(true) {
+    let correct, wrong;
+    while (true) {
         correct = 0;
         wrong = 0
         try {
@@ -191,7 +199,7 @@ async function countDelta() {
             getReqPaintPos();
         } catch (err) {
             var tmp = Date().toLocaleString();
-            console.log(tmp, 'Get PaintBoard While Counting Delta Failed:', err.code);
+            console.log(tmp, 'Get PaintBoard While Counting Delta Failed:', err.message);
             continue;
         }
         break;
@@ -200,13 +208,20 @@ async function countDelta() {
         for (let pix of p.map) {
             if (board[pix.x + p.x][pix.y + p.y] == pix.hex) correct++;
             else wrong++;
-            if (last_board[pix.x + p.x][pix.y + p.y] != board[pix.x + p.x][pix.y + p.y]) {
-                if (config.mode == "priority") {
-                    priority[pix.x + p.x][pix.y + p.y] += 1;
-                } else if(config.mode == "auto") {
-                    waitpos[pix.x + p.x][pix.y + p.y] = 5;
+            if (last_board.size) {
+                if (last_board.get((pix.x + p.x,pix.y + p.y)) != board[pix.x + p.x][pix.y + p.y]) {
+                    if (config.mode == "priority") {
+                        if(!priority.has((pix.x + p.x,pix.y + p.y))) priority.set((pix.x + p.x,pix.y + p.y),1);
+                        else {
+                            map_tmpval = priority.get((pix.x + p.x,pix.y + p.y));
+                            priority.set((pix.x + p.x,pix.y + p.y),map_tmpval + 1);
+                        }
+                    } else if (config.mode == "auto") {
+                        waitpos.set((pix.x + p.x,pix.y + p.y),5);
+                    }
                 }
             }
+            last_board.set((pix.x + p.x,pix.y + p.y),board[pix.x + p.x][pix.y + p.y]);
         }
     }
     var tmp = Date().toLocaleString();
