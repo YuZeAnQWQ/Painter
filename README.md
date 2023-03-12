@@ -4,7 +4,7 @@
 [![](https://img.shields.io/github/commit-activity/m/hjl2011/LS-Paintboard-AutoPaint?logo=GitHub&style=flat-square)](https://github.com/hjl2011/LS-Paintboard-AutoPaint)
 [![](https://img.shields.io/github/stars/hjl2011/LS-Paintboard-AutoPaint?logo=GitHub&style=flat-square)](https://github.com/hjl2011/LS-Paintboard-AutoPaint)
 [![](https://img.shields.io/github/languages/code-size/hjl2011/LS-Paintboard-AutoPaint?logo=GitHub&style=flat-square)](https://github.com/hjl2011/LS-Paintboard-AutoPaint)
-[![](https://img.shields.io/github/downloads-pre/hjl2011/LS-Paintboard-AutoPaint/latest/total?style=flat-square)](https://github.com/hjl2011/LS-Paintboard-AutoPaint)
+[![](https://img.shields.io/github/downloads/hjl2011/LS-Paintboard-AutoPaint/latest/total?style=flat-square)](https://github.com/hjl2011/LS-Paintboard-AutoPaint)
 </center>
 
 

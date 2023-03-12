@@ -117,7 +117,7 @@ function getReqPaintPos() {
                     return priority.get((b.x, b.y)) - priority.get((a.x, a.y));
                 });
             } else if (config.mode == "random") {
-                reqPaintPos.sort((a, b) => {
+                reqPaintPos.sort(() => {
                     return Math.random() - 0.5;
                 });
             }
