@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 const querystring = require('querystring');
 const process = require('process');
 
-let config;
+let config, tconfig;
 let PaintBoardUrl = '';
 let pic = [];
 let board = [], last_board = new Map(), waitpos = new Map(), priority = new Map();
@@ -28,7 +28,7 @@ async function main() {
         if (tmp < config.startTimestamp * 1000) continue;
         if (tmp > config.endTimestamp * 1000) break;
         if (tmp - lastGetBoardTime > config.fetchTime) await countDelta();
-        for (let user of config.tokens) {
+        for (let user of tconfig.tokens) {
             if (Date.now() - user.lastPaintTime < config.paintTime) continue;
             if (fail_tokens_flg[user.token]) continue;
             if (reqPaintPos.length) {
@@ -46,12 +46,13 @@ async function main() {
 function getConfig() {
     try {
         config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf-8'));
-        for (let user of config.tokens) {
+        tconfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'tokens.json'), 'utf-8'));
+        for (let user of tconfig.tokens) {
             user.lastPaintTime = Date.now() - config.lastPaintTime;
         }
         PaintBoardUrl = config.url;
-        console.log(`Token: ${config.tokens.length}`);
-        last_oktoken = config.tokens.length;
+        console.log(`Token: ${tconfig.tokens.length}`);
+        last_oktoken = tconfig.tokens.length;
         if (config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
         if (config.paintTime < 30000) console.log("Warning: paintTime < 30s");
         console.log("");
@@ -111,9 +112,9 @@ function getReqPaintPos() {
             }
             if (config.mode == "priority") {
                 reqPaintPos.sort((a, b) => {
-                    if(!priority.has((a.x,a.y))) priority.set((a.x,a.y),0);
-                    if(!priority.has((b.x,b.y))) priority.set((b.x,b.y),0);
-                    return priority.get((b.x,b.y)) - priority.get((a.x,a.y));
+                    if (!priority.has((a.x, a.y))) priority.set((a.x, a.y), 0);
+                    if (!priority.has((b.x, b.y))) priority.set((b.x, b.y), 0);
+                    return priority.get((b.x, b.y)) - priority.get((a.x, a.y));
                 });
             } else if (config.mode == "random") {
                 reqPaintPos.sort((a, b) => {
@@ -209,24 +210,24 @@ async function countDelta() {
             if (board[pix.x + p.x][pix.y + p.y] == pix.hex) correct++;
             else wrong++;
             if (last_board.size) {
-                if (last_board.get((pix.x + p.x,pix.y + p.y)) != board[pix.x + p.x][pix.y + p.y]) {
+                if (last_board.get((pix.x + p.x, pix.y + p.y)) != board[pix.x + p.x][pix.y + p.y]) {
                     if (config.mode == "priority") {
-                        if(!priority.has((pix.x + p.x,pix.y + p.y))) priority.set((pix.x + p.x,pix.y + p.y),1);
+                        if (!priority.has((pix.x + p.x, pix.y + p.y))) priority.set((pix.x + p.x, pix.y + p.y), 1);
                         else {
-                            map_tmpval = priority.get((pix.x + p.x,pix.y + p.y));
-                            priority.set((pix.x + p.x,pix.y + p.y),map_tmpval + 1);
+                            map_tmpval = priority.get((pix.x + p.x, pix.y + p.y));
+                            priority.set((pix.x + p.x, pix.y + p.y), map_tmpval + 1);
                         }
                     } else if (config.mode == "auto") {
-                        waitpos.set((pix.x + p.x,pix.y + p.y),5);
+                        waitpos.set((pix.x + p.x, pix.y + p.y), 5);
                     }
                 }
             }
-            last_board.set((pix.x + p.x,pix.y + p.y),board[pix.x + p.x][pix.y + p.y]);
+            last_board.set((pix.x + p.x, pix.y + p.y), board[pix.x + p.x][pix.y + p.y]);
         }
     }
     var tmp = Date().toLocaleString();
     console.log(`${tmp} Paint: \x1B[34m${isNaN(correct - lcorrect) ? 0 : correct - lcorrect}\x1B[0m, Remaining: \x1B[34m${wrong}\x1B[0m, WrongToken: \x1B[34m${wrongtoken}\x1B[0m.`);
-    last_oktoken = config.tokens.length - wrongtoken;
+    last_oktoken = tconfig.tokens.length - wrongtoken;
     wrongtoken = 0;
     usetoken = []
     delta = paints - (correct - lcorrect);

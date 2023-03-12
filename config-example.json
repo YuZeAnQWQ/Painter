@@ -6,21 +6,7 @@
   "endTimestamp": 1680364799,
   "mode": "auto",
   "pictures": [
-    {
-      "id": "pic1",
-      "x": 0,
-      "y": 0
-    },
-    {
-      "id": "pic2",
-      "x": 200,
-      "y": 0
-    }
-  ],
-  "tokens": [
-    {
-      "uid": 123,
-      "token": "abc"
-    }
+    {"id": "pic1", "x": 0, "y": 0},
+    {"id": "pic2", "x": 200, "y": 0}
   ]
 }
