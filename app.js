@@ -5,6 +5,8 @@ const fetch = require('node-fetch');
 const querystring = require('querystring');
 const process = require('process');
 
+const mode_arr = [`random`,`priority`,`auto`,`direction1`,`direction2`,`direction3`,`direction4`];
+
 let config, tconfig;
 let PaintBoardUrl = '';
 let pic = [];
@@ -16,6 +18,7 @@ let last_oktoken = 0, wrongtoken = 0;
 let usetoken = [];
 let fail_tokens_flg = [];
 let brk_flg = false, map_tmpval = 0;
+let direction_id = -1;
 
 main();
 
@@ -47,15 +50,19 @@ function getConfig() {
     try {
         config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf-8'));
         tconfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'tokens.json'), 'utf-8'));
+        if(!mode_arr.includes(config.mode)) throw err;
         for (let user of tconfig.tokens) {
             user.lastPaintTime = Date.now() - config.lastPaintTime;
         }
         PaintBoardUrl = config.url;
-        console.log(`Token: ${tconfig.tokens.length}`);
+        if(config.mode.length == 10) {
+            direction_id = config.mode[config.mode.length - 1];
+        }
         last_oktoken = tconfig.tokens.length;
+        console.log("");
+        console.log(`Token: ${tconfig.tokens.length}`);
         if (config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
         if (config.paintTime < 30000) console.log("Warning: paintTime < 30s");
-        console.log("");
     } catch (err) {
         console.log('Get Config Failed.');
         process.exit(1);
@@ -119,6 +126,22 @@ function getReqPaintPos() {
             } else if (config.mode == "random") {
                 reqPaintPos.sort(() => {
                     return Math.random() - 0.5;
+                });
+            } else if (direction_id != -1) {
+                reqPaintPos.sort((a, b) => {
+                    if(direction_id == 1) {
+                        if(a.x == b.x) return a.y - b.y;
+                        else return a.x - b.x;
+                    } else if(direction_id == 2) {
+                        if(a.x == b.x) return a.y - b.y;
+                        else return b.x - a.x;
+                    } else if(direction_id == 3) {
+                        if(a.y == b.y) return a.x - b.x;
+                        else return a.y - b.y;
+                    } else if(direction_id == 4) {
+                        if(a.y == b.y) return a.x - b.x;
+                        else return b.y - a.y;
+                    }
                 });
             }
         } catch (err) {
