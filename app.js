@@ -59,10 +59,10 @@ function getConfig() {
             direction_id = config.mode[config.mode.length - 1];
         }
         last_oktoken = tconfig.tokens.length;
-        console.log("");
         console.log(`Token: ${tconfig.tokens.length}`);
         if (config.fetchTime < 5000) console.log("Warning: fetchTime < 5s");
         if (config.paintTime < 30000) console.log("Warning: paintTime < 30s");
+        console.log("");
     } catch (err) {
         console.log('Get Config Failed.');
         process.exit(1);
